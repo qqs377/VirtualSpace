@@ -1,0 +1,66 @@
+<html>
+<head>
+    <title>Virtual Space</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="game">
+        <input id="playerName" placeholder="Enter your name" />
+        <button onclick="startGame()">Start Game</button>
+        <div id="chat">
+            <div id="chatMessages"></div>
+            <input id="message" placeholder="Type a message" />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <div id="gameArea" style="position: relative; width: 500px; height: 500px; background-color: #f0f0f0;">
+            <!-- display player character -->
+        </div>
+    </div>
+
+    <script>
+        const socket = io('https://virtualspace.onrender.com');  // Render URL
+        let playerName = '';
+
+        // start game
+        function startGame() {
+            playerName = document.getElementById('playerName').value;
+            socket.emit('newPlayer', playerName);
+        }
+
+        // send message
+        function sendMessage() {
+            const message = document.getElementById('message').value;
+            if (message) {
+                socket.emit('message', message);
+                document.getElementById('message').value = '';  // clear chat box
+            }
+        }
+
+        // show other players
+        socket.on('updatePlayers', (players) => {
+            const gameArea = document.getElementById('gameArea');
+            gameArea.innerHTML = '';  // clear other player's previous location
+            for (let id in players) {
+                const player = players[id];
+                const playerDiv = document.createElement('div');
+                playerDiv.textContent = player.name;
+                playerDiv.style.position = 'absolute';
+                playerDiv.style.left = player.x + 'px';
+                playerDiv.style.top = player.y + 'px';
+                gameArea.appendChild(playerDiv);
+            }
+        });
+
+        // display chat message
+        socket.on('chatMessage', (data) => {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML += `<p><strong>${data.name}:</strong> ${data.message}</p>`;
+        });
+
+        // maximum 7 people
+        socket.on('maxPlayersReached', () => {
+            alert('Space full...');
+        });
+    </script>
+</body>
+</html>
